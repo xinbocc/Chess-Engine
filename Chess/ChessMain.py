@@ -1,3 +1,66 @@
 '''
 This is a driver file -> It will be responsible for handling user input and displaying the current GameState object.
 '''
+
+import pygame as p
+import ChessEngine
+
+WIDTH = HEIGHT = 512
+DIMENSION = 8
+SQUARE_SIZE = HEIGHT // DIMENSION
+MAX_FPS = 15
+IMAGES = {}
+
+def loadImages():
+    ''' Loading images just one time -> global dictionary of images.'''
+    pieces = ["wR", "wN", "wB", "wQ", "wK", "wp", "bR", "bN", "bB", "bQ", "bK", "bp"]
+    for piece in pieces:
+        IMAGES[piece] = p.transform.scale(p.image.load("Chess/images/" + piece + ".png"), (SQUARE_SIZE, SQUARE_SIZE))
+
+def main():
+    ''' The main driver for our code. This will handle user input and updating the graphics '''
+    p.init()
+    screen = p.display.set_mode((WIDTH, HEIGHT))
+    clock = p.time.Clock()
+    screen.fill(p.Color("white"))
+    gs = ChessEngine.GameState()
+    loadImages()
+    running = True
+    while running:
+        # The game
+        for e in p.event.get():
+            if e.type == p.QUIT:
+                running = False
+        
+        drawGameState(screen, gs)
+        clock.tick(MAX_FPS)
+        p.display.flip()
+
+
+def drawGameState(screen, gs):
+    '''Draws the game state'''
+    drawBoard(screen) # Drawing board's squares
+    # TODO: Adding piece highlighting or move suggestions 
+    drawPieces(screen, gs.board) # Drawing the pieces
+
+
+def drawBoard(screen):
+    '''Draws the squares on the board'''
+    colors = [p.Color(237, 214, 176), p.Color(184, 135, 98)]
+    for row in range(DIMENSION):
+        for column in range(DIMENSION):
+            color = (colors[(column+row) % 2])
+            p.draw.rect(screen, color, p.Rect(column*SQUARE_SIZE, row*SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
+
+def drawPieces(screen, board):
+    '''Draws the pieces on the board using current GameState.board'''
+    for row in range (DIMENSION):
+        for column in range(DIMENSION):
+            piece = board[row][column]
+            if piece != '--': # not empty square
+                screen.blit(IMAGES[piece], p.Rect(column*SQUARE_SIZE, row*SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
+
+if __name__ == "__main__":
+    main()
+
+
