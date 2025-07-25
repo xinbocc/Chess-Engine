@@ -19,10 +19,48 @@ class GameState():
         self.moveLog = []
     
     def makeMove(self, move):
+        '''Takes a move and execute it, rule's exceptions: castling, en passant, pawn promotion'''
         self.board[move.startRow][move.startColumn] = "--"
         self.board[move.endRow][move.endColumn] = move.pieceMoved
         self.moveLog.append(move) # log the move so we can undo it later if needed
         self.whiteToMove = not self.whiteToMove # switch turns
+
+    def undoMove(self):
+        '''Undo the last move made'''
+        if len(self.moveLog) != 0:
+            self.whiteToMove = not self.whiteToMove
+            move = self.moveLog.pop()
+            self.board[move.startRow][move.startColumn] = move.pieceMoved
+            self.board[move.endRow][move.endColumn] = move.pieceCaptured
+
+    def getValidMoves(self):
+        '''All moves considering checks'''
+        return self.getAllPossibleMoves()
+    
+    def getAllPossibleMoves(self):
+        '''All moves without considering checks'''
+        moves = [Move((6,4), (4,4), self.board)]
+        for row in range(len(self.board)):
+            for column in range(len(self.board[row])):
+                turn = self.board[row][column][0]
+                if (turn == "w" and self.whiteToMove) and (turn == 'b' and not self.whiteToMove):
+                    piece = self.board[row][column][1]
+                    if piece == 'p':
+                        self.getPawnMoves(row, column, moves)
+                    elif piece == 'R':
+                        self.getRockMoves(row, column, moves)
+        return moves
+
+
+    def getPawnMoves(self, row, column, moves):
+        '''Get all the pawn moves for the pawn located at row, column and add this move to the list'''
+        pass
+
+    def getRookMoves(self, row, column, moves):
+        '''Get all the rook moves for the rook located at row, column and add this move to the list'''
+        pass
+
+
 
 class Move():
     # maps keys to values
@@ -41,6 +79,15 @@ class Move():
 
         self.pieceMoved = board[self.startRow][self.startColumn]
         self.pieceCaptured = board[self.endRow][self.endColumn]
+
+        self.moveID = self.startRow * 1000 + self.startColumn * 100 + self.endRow * 10 + self.endColumn 
+
+    def __eq__(self, other):
+        '''Overriding the equals method'''
+        if isinstance(other, Move):
+            return self.moveID == other.moveID
+        return False
+
 
     def getChessNotation(self):
         # TODO: Adding real chess notation
