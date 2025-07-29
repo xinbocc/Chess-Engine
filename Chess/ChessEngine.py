@@ -11,10 +11,13 @@ class GameState():
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["--", "--", "--", "bp", "--", "--", "--", "--"],
             ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
             ]
+        
+        self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves, 'B': self.getBishopMoves, 'Q': self.getQueenMoves, 'K': self.getKingMoves}
+
         self.whiteToMove = True
         self.moveLog = []
     
@@ -39,27 +42,53 @@ class GameState():
     
     def getAllPossibleMoves(self):
         '''All moves without considering checks'''
-        moves = [Move((6,4), (4,4), self.board)]
+        moves = []
         for row in range(len(self.board)):
             for column in range(len(self.board[row])):
                 turn = self.board[row][column][0]
-                if (turn == "w" and self.whiteToMove) and (turn == 'b' and not self.whiteToMove):
+                if (turn == "w" and self.whiteToMove) or (turn == 'b' and not self.whiteToMove):
                     piece = self.board[row][column][1]
-                    if piece == 'p':
-                        self.getPawnMoves(row, column, moves)
-                    elif piece == 'R':
-                        self.getRockMoves(row, column, moves)
+                    self.moveFunctions[piece](row, column, moves)
         return moves
 
 
     def getPawnMoves(self, row, column, moves):
         '''Get all the pawn moves for the pawn located at row, column and add this move to the list'''
-        pass
+        if self.whiteToMove: # white pawn move
+            if self.board[row-1][column] == '--': # advancing 1 square
+                moves.append(Move((row, column), (row-1, column), self.board))
+                if row == 6 and self.board[row-2][column] == "--":
+                    moves.append(Move((row, column), (row-2, column), self.board))
+
+            if column - 1 >= 0: # left captures
+                if self.board[row-1][column-1][0] == 'b': #enemy piece to capture
+                    moves.append(Move((row, column), (row-1, column-1), self.board))
+            if column + 1 < 7: # right captures
+                if self.board[row-1][column+1][0] == 'b': #enemy piece to capture
+                    moves.append(Move((row, column), (row-1, column+1), self.board))
+
+        else:
+            pass
 
     def getRookMoves(self, row, column, moves):
         '''Get all the rook moves for the rook located at row, column and add this move to the list'''
         pass
+    
+    def getKnightMoves(self, row, column, moves):
+        '''Get all the rook moves for the knight located at row, column and add this move to the list'''
+        pass
+    
+    def getBishopMoves(self, row, column, moves):
+        '''Get all the rook moves for the bishop located at row, column and add this move to the list'''
+        pass
 
+    def getQueenMoves(self, row, column, moves):
+        '''Get all the rook moves for the queen located at row, column and add this move to the list'''
+        pass
+
+    def getKingMoves(self, row, column, moves):
+        '''Get all the rook moves for the king located at row, column and add this move to the list'''
+        pass
 
 
 class Move():
