@@ -78,7 +78,7 @@ def main():
 def drawGameState(screen, gs):
     '''Draws the game state'''
     drawBoard(screen) # Drawing board's squares
-    # TODO: Adding piece highlighting or move suggestions 
+    #TO-DO: Adding piece highlighting or move suggestions 
     drawPieces(screen, gs.board) # Drawing the pieces
 
 
