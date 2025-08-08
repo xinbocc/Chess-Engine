@@ -25,7 +25,7 @@ class GameState():
         self.blackKingLocation = (0, 4)
         self.checkMate = False
         self.staleMate = False
-        self.inCheck = False
+        self.check = False
         self.pins = []
         self.checks = []
 
@@ -48,14 +48,7 @@ class GameState():
             self.whiteKingLocation = (move.endRow, move.endColumn)
         elif move.pieceMoved == 'bK':
             self.blackKingLocation = (move.endRow, move.endColumn)
-        # if pawn moves twice, next move can capture enpassant
-        if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
-            self.enPassantPossible = ((move.endRow + move.startRow) // 2, move.endColumn)
-        else:
-            self.enPassantPossible = ()
-        # if enpassant move, must update te board to capture the pawn
-        if move.enPassant:
-            self.board[move.startRow][move.endColumn] = '--'
+
         # if pawn promotion change piece
         if move.pawnPromotion:
             """ promotedPiece = input("Promote to Q, R, B, or N:")
@@ -86,7 +79,7 @@ class GameState():
 
         # update castling rights
         self.updateCastleRights(move)
-        self.castleRightsLog.append(CastleRights(self.whiteCastleKingside, self.whiteCastleQueenside, self.blackCastleKingside, self.blackCastleQueenside))
+        self.castleRightsLog.append(CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks, self.currentCastlingRights.wqs, self.currentCastlingRights.bqs))
 
 
     def undoMove(self):
@@ -110,8 +103,8 @@ class GameState():
             if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
                 self.enPassantPossible = ()
             # give back castle rights if move took them away
-            self.castleRightLog.pop() # remove last moves updates
-            castleRights = self.castleRightLog[-1]
+            self.castleRightsLog.pop() # remove last moves updates
+            castleRights = self.castleRightsLog[-1]
             self.whiteCastleKingside = castleRights.wks
             self.blackCastleKingside = castleRights.bks
             self.whiteCastleQueenside = castleRights.wqs
@@ -164,7 +157,7 @@ class GameState():
         tempCastleRights = CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks, self.currentCastlingRights.wqs, self.currentCastlingRights.bqs)
 
         moves = []
-        self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks()
+        self.check, self.pins, self.checks = self.checkForPinsAndChecks()
 
         if self.whiteToMove:
             kingRow = self.whiteKingLocation[0]
@@ -172,7 +165,7 @@ class GameState():
         else:
             kingRow = self.blackKingLocation[0]
             kingCol = self.blackKingLocation[1]
-        if self.inCheck:
+        if self.check:
             if len(self.checks) == 1:
                 moves = self.getAllPossibleMoves()
                 check = self.checks[0]
@@ -204,7 +197,7 @@ class GameState():
                 self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
 
         if len(moves) == 0:
-            if self.inCheck:
+            if self.check:
                 self.checkMate = True
             else:
                 self.staleMate = True
@@ -442,8 +435,8 @@ class GameState():
                         self.blackKingLocation = (endRow, endColumn)
                     else:
                         self.whiteKingLocation = (endRow, endColumn)
-                    inCheck, pins, checks = self.checkForPinsAndChecks()
-                    if not inCheck:
+                    check, pins, checks = self.checkForPinsAndChecks()
+                    if not check:
                         moves.append(Move((row, column), (endRow, endColumn), self.board))
                     if allyColor == 'w':
                         self.blackKingLocation = (row, column)
@@ -474,7 +467,7 @@ class GameState():
     def checkForPinsAndChecks(self):
         pins = [] # squares where the allied pinned piece is and dir pinned from
         checks = [] # squares where the enemy is applying a check
-        inCheck = False
+        check = False
         if self.whiteToMove:
             enemyColor = 'b'
             allyColor = 'w'
@@ -513,7 +506,7 @@ class GameState():
                             (i == 1 and type == 'p' and ((enemyColor == 'w' and 6 <= j <= 7) or (enemyColor == 'b' and 4 <= j <= 5))) or \
                             (type == 'Q') or (i == 1 and type == 'K'):
                             if possiblePin == (): # no piece blocking, so check
-                                inCheck = True
+                                check = True
                                 checks.append((endRow, endColumn, d[0], d[1]))
                                 break
                             else: # piece blocking, is pinned
@@ -531,11 +524,11 @@ class GameState():
             if 0 <= endRow < 8 and 0 <= endColumn < 8:
                 endPiece = self.board[endRow][endColumn]
                 if endPiece[0] == enemyColor and endPiece[1] == 'N':
-                    inCheck = True
+                    check = True
                     checks.append((endRow, endColumn, m[0], m[1]))
             else:
                 break
-        return inCheck, pins, checks
+        return check, pins, checks
 
 
 class CastleRights:

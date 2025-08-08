@@ -67,23 +67,41 @@ def main():
                     moveMade = True
 
         if moveMade:
+            animateMove(gs.moveLog[-1], screen, gs.board, clock)
             validMoves = gs.getValidMoves()
             moveMade = False
 
-        drawGameState(screen, gs)
+        drawGameState(screen, gs, validMoves, sqSelected)
         clock.tick(MAX_FPS)
         p.display.flip()
 
+def highlightSquares(screen, gs, validMoves, sqSelected):
+    '''Highlight square selected and moves for piece selected'''
+    if sqSelected != ():
+        r, c = sqSelected
+        if gs.board[r][c][0] == ('w' if gs.whiteToMove else 'b'):
+            #highlight selected square
+            s = p.Surface((SQUARE_SIZE, SQUARE_SIZE))
+            s.set_alpha(100)
+            s.fill(p.Color('cyan'))
+            screen.blit(s, (c*SQUARE_SIZE, r*SQUARE_SIZE))
+            #highlight moves from sq
+            s.fill(p.Color('yellow'))
+            for move in validMoves:
+                if move.startRow == r and move.startColumn == c:
+                    screen.blit(s, (move.endColumn*SQUARE_SIZE, move.endRow*SQUARE_SIZE))
+                    
 
-def drawGameState(screen, gs):
+def drawGameState(screen, gs, validMoves, sqSelected):
     '''Draws the game state'''
     drawBoard(screen) # Drawing board's squares
-    #TO-DO: Adding piece highlighting or move suggestions 
+    highlightSquares(screen, gs, validMoves, sqSelected)
     drawPieces(screen, gs.board) # Drawing the pieces
 
 
 def drawBoard(screen):
     '''Draws the squares on the board'''
+    global colors
     colors = [p.Color(237, 214, 176), p.Color(184, 135, 98)]
     for row in range(DIMENSION):
         for column in range(DIMENSION):
@@ -97,6 +115,30 @@ def drawPieces(screen, board):
             piece = board[row][column]
             if piece != '--': # not empty square
                 screen.blit(IMAGES[piece], p.Rect(column*SQUARE_SIZE, row*SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
+
+def animateMove(move, screen, board, clock):
+    '''Animating a move'''
+    global colors
+    dR = move.endRow - move.startRow
+    dC = move.endColumn - move.startColumn
+    framesPerSquare = 10 # frames to move one square
+    frameCount = (abs(dR) + abs(dC)) * framesPerSquare
+    for frame in range(frameCount + 1):
+        r, c = (move.startRow + dR*frame/frameCount, move.startColumn + dC*frame/frameCount)
+        drawBoard(screen)
+        drawPieces(screen, board)
+        #erase the piece moved from its ending sq
+        color = colors[(move.endRow + move.endColumn) % 2]
+        endSquare = p.Rect(move.endColumn*SQUARE_SIZE, move.endRow*SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+        p.draw.rect(screen, color, endSquare)
+        #draw captured piece onto rectangle
+        if move.pieceCaptured != '--':
+            screen.blit(IMAGES[move.pieceCaptured], endSquare)
+        #draw moving piece 
+        screen.blit(IMAGES[move.pieceMoved], p.Rect(c*SQUARE_SIZE, r*SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
+        p.display.flip()
+        clock.tick(60)
+
 
 if __name__ == "__main__":
     main()
