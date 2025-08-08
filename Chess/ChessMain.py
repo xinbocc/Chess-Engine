@@ -3,7 +3,7 @@ This is a driver file -> It will be responsible for handling user input and disp
 '''
 
 import pygame as p
-import ChessEngine
+from Chess import ChessEngine, ChessAI
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8
@@ -28,50 +28,88 @@ def main():
     validMoves = gs.getValidMoves()
     moveMade = False # flag variable for when a move is made
 
+    animate = False #flag variable for when we should animate a move
+
     loadImages()
     running = True
     sqSelected = () # no square is selected, keeps tracks of the last click of the user (row, column)
     playerClicks = [] # keeps tracks of player clicks [(5, 4), (6, 4)]
+    gameOver = False
+    playerOne = True # if a human is playing white, then this will be True. if ai is playing -> False
+    playerTwo = False # same as playerOne but with black
     while running:
+        humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
+
+
         # The game
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             # Mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
-                location = p.mouse.get_pos() # (x, y) location of mouse
-                column = location[0] // SQUARE_SIZE
-                row = location[1] // SQUARE_SIZE
-                if sqSelected == (row, column): # user clicked in same position twice -> unselect?
-                    sqSelected = ()
-                    playerClicks = [] 
-                else:
-                    sqSelected = (row, column)
-                    playerClicks.append(sqSelected)
-                if len(playerClicks) == 2:
-                    # we move
-                    move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
-                    print(move.getChessNotation())
-                    
-                    if move in validMoves:                
-                        gs.makeMove(move)
-                        moveMade = True
+                if not gameOver and humanTurn:
+                    location = p.mouse.get_pos() # (x, y) location of mouse
+                    column = location[0] // SQUARE_SIZE
+                    row = location[1] // SQUARE_SIZE
+                    if sqSelected == (row, column): # user clicked in same position twice -> unselect?
                         sqSelected = ()
-                        playerClicks = []
+                        playerClicks = [] 
                     else:
-                        playerClicks = [sqSelected]
+                        sqSelected = (row, column)
+                        playerClicks.append(sqSelected)
+                    if len(playerClicks) == 2:
+                        # we move
+                        move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
+                        print(move.getChessNotation())
+                        for i in range(len(validMoves)):
+                            if move in validMoves:                
+                                gs.makeMove(move)
+                                moveMade = True
+                                animate = True
+                                sqSelected = ()
+                                playerClicks = []
+                        if not moveMade:
+                            playerClicks = [sqSelected]
             # Key handlers
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z: # undo w/ 'z' is pressed
                     gs.undoMove()
                     moveMade = True
+                    animate = False
+                if e.key == p.K_r: # reset the board when 'r' is pressed
+                    gs = ChessEngine.GameState()
+                    validMoves = gs.getValidMoves()
+                    sqSelected = ()
+                    playerClicks = []
+                    moveMade = False
+                    animate = False
+        # ai move finder logic
+        if not gameOver and not humanTurn:
+            AIMove = ChessAI.findRandomMove(validMoves)
+            gs.makeMove(AIMove)
+            moveMade = True
+            animate = True
 
         if moveMade:
-            animateMove(gs.moveLog[-1], screen, gs.board, clock)
+            if animate:
+                animateMove(gs.moveLog[-1], screen, gs.board, clock)
             validMoves = gs.getValidMoves()
             moveMade = False
+            animate = False
 
         drawGameState(screen, gs, validMoves, sqSelected)
+
+        if gs.checkMate:
+            gameOver = True
+            if gs.whiteToMove:
+                drawText(screen, 'Black wins by checkmate')
+            else:
+                drawText(screen, 'White wins by checkmate')
+        elif gs.staleMate:
+            gameOver = True
+            drawText(screen, 'Stalemate')
+
+
         clock.tick(MAX_FPS)
         p.display.flip()
 
@@ -138,6 +176,14 @@ def animateMove(move, screen, board, clock):
         screen.blit(IMAGES[move.pieceMoved], p.Rect(c*SQUARE_SIZE, r*SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
         p.display.flip()
         clock.tick(60)
+
+def drawText(screen, text):
+    font = p.font.SysFont("Roboto", 32, True, False)
+    textObject = font.render(text, 0, p.Color('Black'))
+    textLocation = p.Rect(0, 0, WIDTH, HEIGHT).move(WIDTH/2 - textObject.get_width()/2, HEIGHT/2 - textObject.get_height()/2)
+    screen.blit(textObject, textLocation)
+    textObject = font.render(text, 0, p.Color('Cyan'))
+    screen.blit(textObject, textLocation.move(-2, -2))
 
 
 if __name__ == "__main__":
