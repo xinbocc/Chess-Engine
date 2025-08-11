@@ -3,7 +3,7 @@ This is a driver file -> It will be responsible for handling user input and disp
 '''
 
 import pygame as p
-from Chess import ChessEngine, ChessAI
+import ChessEngine, ChessAI
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8
@@ -85,7 +85,9 @@ def main():
                     animate = False
         # ai move finder logic
         if not gameOver and not humanTurn:
-            AIMove = ChessAI.findRandomMove(validMoves)
+            AIMove = ChessAI.findBestMove(gs, validMoves)
+            if AIMove is None:
+                AIMove = ChessAI.findRandomMove(validMoves)
             gs.makeMove(AIMove)
             moveMade = True
             animate = True
