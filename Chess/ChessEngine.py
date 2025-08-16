@@ -34,6 +34,9 @@ class GameState():
         self.currentCastlingRights = CastleRights(True, True, True, True)
         self.castleRightsLog = [CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks, self.currentCastlingRights.wqs, self.currentCastlingRights.bqs)]
 
+        # self.protects = [][]
+        # self.threatens = [][]
+        # self.squaresCanMoveTo = [][]
         
 
     def makeMove(self, move):

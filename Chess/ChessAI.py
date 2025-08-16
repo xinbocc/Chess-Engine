@@ -9,7 +9,7 @@ DEPTH = 2
 def findRandomMove(validMoves):
     '''Picks and returns a random move'''
     return validMoves[random.randint(0, len(validMoves)-1)]
-
+""" 
 def findBestMove(gs, validMoves):
     '''Find the best move based on material alone'''
     turnMultiplier = 1 if gs.whiteToMove else -1
@@ -42,13 +42,15 @@ def findBestMove(gs, validMoves):
             bestPlayerMove = playerMove
         gs.undoMove()
     return bestPlayerMove
+ """
 
-
-def findBestMoveMinMax(gs, validMoves):
+def findBestMove(gs, validMoves):
     '''Helper method to make first recursive call'''
-    global nextMove
+    global nextMove, counter
     nextMove = None
-    findMoveMinMax(gs, validMoves, DEPTH, gs.whiteToMove)
+    random.shuffle(validMoves)
+    # findMoveMinMax(gs, validMoves, DEPTH, gs.whiteToMove)
+    findMoveNegaMaxAlphaBeta(gs, validMoves, DEPTH, -CHECKMATE, CHECKMATE, 1 if gs.whiteToMove else -1)
     return nextMove
 
 def findMoveMinMax(gs, validMoves, depth, whiteToMove):
@@ -81,8 +83,43 @@ def findMoveMinMax(gs, validMoves, depth, whiteToMove):
             gs.undoMove()
         return minScore
 
+def findMoveNegaMax(gs, validMoves, depth, turnMultiplier):
+    global nextMove
+    if depth == 0:
+        return turnMultiplier * scoreBoard(gs)
+    
+    maxScore = -CHECKMATE
+    for move in validMoves:
+        gs.makeMove(move)
+        nextMoves = gs.getValidMoves()
+        score = -findMoveNegaMax(gs, nextMoves, depth - 1, -turnMultiplier)
+        if score > maxScore:
+            maxScore = score
+            if depth == DEPTH:
+                nextMove = move
+        gs.undoMove()
+    return maxScore
 
-
+def findMoveNegaMaxAlphaBeta(gs, validMoves, depth, alpha, beta, turnMultiplier):
+    global nextMove
+    if depth == 0:
+        return turnMultiplier * scoreBoard(gs)
+    # TODO: move ordering 
+    maxScore = -CHECKMATE
+    for move in validMoves:
+        gs.makeMove(move)
+        nextMoves = gs.getValidMoves()
+        score = -findMoveNegaMaxAlphaBeta(gs, nextMoves, depth - 1, -beta, -alpha ,-turnMultiplier)
+        if score > maxScore:
+            maxScore = score
+            if depth == DEPTH:
+                nextMove = move
+        gs.undoMove()
+        if maxScore > alpha: # pruining happens
+            alpha = maxScore
+        if alpha >= beta:
+            break
+    return maxScore
     
 def scoreBoard(gs):
     '''A positive score is good for white, a negative score is good for black'''
