@@ -101,10 +101,9 @@ class GameState():
             if move.enPassant:
                 self.board[move.endRow][move.endColumn] = '--' # removes the pawn that was added in the wrong squares
                 self.baord[move.startRow][move.endColumn] = move.pieceCaptured # puts the pawn back on the correct square it was captured from
-                self.enPassantPossible = (move.endRow, move.endColumn) # allow an en passant to happend on the next move
-            # Undo a 2 aquare pawn advance should make enPassantPossible = () again
-            if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
-                self.enPassantPossible = ()
+            self.enPassantPossibleLog.pop()
+            self.enPassantPossible = self.enPassantPossibleLog[-1]
+
             # give back castle rights if move took them away
             self.castleRightsLog.pop() # remove last moves updates
             castleRights = self.castleRightsLog[-1]
@@ -126,17 +125,20 @@ class GameState():
 
     def updateCastleRights(self, move):
         '''Update the castle rights given the move'''
+        # if a rook is captured
         if move.pieceCaptured == "wR":
-            if move.endColumn == 0:  # left rook
-                self.currentCastlingRights.wqs = False
-            elif move.endColumn == 7:  # right rook
-                self.currentCastlingRights.wks = False
+            if move.endColumn == 7:
+                if move.endColumn == 0:  # left rook
+                    self.currentCastlingRights.wqs = False
+                elif move.endColumn == 7:  # right rook
+                    self.currentCastlingRights.wks = False
         elif move.pieceCaptured == "bR":
-            if move.endColumn == 0:  # left rook
-                self.currentCastlingRights.bqs = False
-            elif move.endColumn == 7:  # right rook
-                self.currentCastlingRights.bks = False
-
+            if move.endRow == 0:
+                if move.endColumn == 0:  # left rook
+                    self.currentCastlingRights.bqs = False
+                elif move.endColumn == 7:  # right rook
+                    self.currentCastlingRights.bks = False
+        # else
         if move.pieceMoved == 'wK':
             self.currentCastlingRights.wqs = False
             self.currentCastlingRights.wks = False
@@ -155,6 +157,7 @@ class GameState():
                     self.currentCastlingRights.bqs = False
                 elif move.startColumn == 7:  # right rook
                     self.currentCastlingRights.bks = False
+        
 
 
     def getValidMoves(self):
@@ -583,3 +586,28 @@ class Move():
 
     def getRankFile(self, r, c):
         return self.cols2Files[c] + self.rows2Ranks[r]
+    
+    #overriding the str() function
+    def __str__(self):
+        # castle move
+        if self.castle:
+            return "O-O" if self.endColumn == 6 else "O-O-O"
+
+        endSquare = self.getRankFile(self.endRow, self.endColumn)
+
+        #pawn moves
+        if self.pieceMoved[1] == 'p':
+            if self.isCapture:
+                return self.cols2Files[self.startColumn] + 'x' + endSquare
+            else:
+                return endSquare
+            #pawn promotions
+        
+        #two of the same type of piece moving to a square
+        #check move: +; checkmate move:#
+        #piece moves
+        moveString = self.pieceMoved[1]
+        if self.isCapture:
+            moveString += 'x'
+        return moveString + endSquare
+    
