@@ -1,6 +1,64 @@
 import random
 
 pieceScore = {'K': 0, 'Q': 9, 'R': 5, 'B': 3, 'N': 3, 'p': 1}
+
+knightScores = [[1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 2, 2, 2, 2, 2, 2, 1],
+                [1, 2, 3, 3, 3, 3, 2, 1],
+                [1, 2, 3, 4, 4, 3, 2, 1],
+                [1, 2, 3, 4, 4, 3, 2, 1],
+                [1, 2, 3, 3, 3, 3, 2, 1],
+                [1, 2, 2, 2, 2, 2, 2, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1]]
+
+bishopScores = [[4, 3, 2, 1, 1, 2, 3, 4],
+                [3, 4, 3, 2, 2, 3, 4, 3],
+                [2, 3, 4, 3, 3, 4, 3, 2],
+                [1, 2, 3, 4, 4, 3, 2, 1],
+                [1, 2, 3, 4, 4, 3, 2, 1],
+                [2, 3, 4, 3, 3, 4, 3, 2],
+                [3, 4, 3, 2, 2, 3, 4, 3],
+                [4, 3, 2, 1, 1, 2, 3, 4]]
+
+queenScores = [[1, 1, 1, 3, 1, 1, 1, 1],
+                [1, 2, 3, 3, 3, 1, 1, 1],
+                [1, 4, 3, 3, 3, 4, 2, 1],
+                [1, 2, 3, 3, 3, 2, 2, 1],
+                [1, 2, 3, 3, 3, 2, 2, 1],
+                [1, 3, 3, 3, 3, 4, 2, 1],
+                [1, 1, 2, 3, 3, 1, 1, 1],
+                [1, 1, 1, 3, 1, 1, 1, 1]]
+
+# rook is better on open files, connected rooks or with queen
+rookScores = [[4, 3, 4, 4, 4, 4, 3, 4],
+                [4, 4, 4, 4, 4, 4, 4, 4],
+                [1, 1, 2, 3, 3, 2, 1, 1],
+                [1, 2, 3, 3, 3, 3, 2, 1],
+                [1, 2, 3, 3, 3, 3, 2, 1],
+                [1, 1, 2, 3, 3, 2, 1, 1],
+                [4, 4, 4, 4, 4, 4, 4, 4],
+                [4, 3, 4, 4, 4, 4, 3, 4]]
+
+whitePawnScores = [[10, 10, 10, 10, 10, 10, 10, 10],
+                [8, 8, 8, 8, 8, 8, 8, 8],
+                [5, 6, 6, 7, 7, 6, 6, 5],
+                [2, 3, 3, 4, 4, 3, 3, 2],
+                [1, 2, 3, 4, 4, 3, 2, 1],
+                [1, 1, 2, 3, 3, 2, 1, 1],
+                [1, 1, 1, 0, 0, 1, 1, 1],
+                [0, 0, 0, 0, 0, 0, 0, 0]]
+
+blackPawnScores = [[0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 1, 1, 0, 0, 1, 1, 1],
+                [1, 1, 2, 3, 3, 2, 1, 1],
+                [1, 2, 3, 4, 4, 3, 2, 1],
+                [2, 3, 3, 4, 4, 3, 3, 2],
+                [5, 6, 6, 7, 7, 6, 6, 5],
+                [8, 8, 8, 8, 8, 8, 8, 8],
+                [10, 10, 10, 10, 10, 10, 10, 10]]
+
+piecePositionScores = {'N': knightScores, 'Q': queenScores, 'B': bishopScores, "R": rookScores, "bp": blackPawnScores, "wp": whitePawnScores}
+
 CHECKMATE = 1000 # high score for checkmate
 STALEMATE = 0
 DEPTH = 2
@@ -68,6 +126,7 @@ def findMoveMinMax(gs, validMoves, depth, whiteToMove):
                 maxScore = score
                 if depth == DEPTH:
                     nextMove = move
+                    print(move, score)
             gs.undoMove()
         return maxScore
     else:
@@ -131,22 +190,25 @@ def scoreBoard(gs):
     elif gs.stalemate:
         return STALEMATE
 
-
-
-
     score = 0
-    for row in gs.board:
-        for square in row:
-            if square[0] == 'w':
-                score += pieceScore[square[1]]
-            elif square[0] == 'b':
-                score -= pieceScore[square[1]]
+    for row in range(len(gs.board)):
+        for column in range(len(gs.board[row])):
+            square = gs.board[row][column]
+            if square != "--":
+                # score it positionally
+                piecePositionScore = 0
+                if square[1] != 'K': # no position table for king
+                    if square[1] == "p": # for pawns
+                        piecePositionScore = piecePositionScores[square][row][column]
+                    else: # for other pieces
+                        piecePositionScore = piecePositionScores[square[1]][row][column]
+
+                if square[0] == 'w':
+                    score += pieceScore[square[1]] + piecePositionScore * .1
+                elif square[0] == 'b':
+                    score -= pieceScore[square[1]] + piecePositionScore * .1
     
     return score
-
-
-
-
 
 
 def scoreMaterial(board):
