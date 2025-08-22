@@ -102,14 +102,14 @@ def findBestMove(gs, validMoves):
     return bestPlayerMove
  """
 
-def findBestMove(gs, validMoves):
+def findBestMove(gs, validMoves, returnQueue):
     '''Helper method to make first recursive call'''
-    global nextMove, counter
+    global nextMove
     nextMove = None
     random.shuffle(validMoves)
     # findMoveMinMax(gs, validMoves, DEPTH, gs.whiteToMove)
     findMoveNegaMaxAlphaBeta(gs, validMoves, DEPTH, -CHECKMATE, CHECKMATE, 1 if gs.whiteToMove else -1)
-    return nextMove
+    returnQueue.put(nextMove)
 
 def findMoveMinMax(gs, validMoves, depth, whiteToMove):
     global nextMove

@@ -4,7 +4,7 @@ This class is responsible for storing all the information about the current stat
 
 class GameState():
     def __init__(self):
-        # 8x8 board, 2d list, 2 characters per square. Notation: crystal clear :)
+        # 8x8 board, 2d list, 2 characters per square. Notation: "color-piece"
         self.board = [
             ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
             ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
@@ -25,18 +25,11 @@ class GameState():
         self.blackKingLocation = (0, 4)
         self.checkMate = False
         self.staleMate = False
-        self.check = False
-        self.pins = []
-        self.checks = []
 
         self.enPassantPossible = () # square where en passant capture can happen
         self.enPassantPossibleLog = [self.enPassantPossible]
         self.currentCastlingRights = CastleRights(True, True, True, True)
         self.castleRightsLog = [CastleRights(self.currentCastlingRights.wks, self.currentCastlingRights.bks, self.currentCastlingRights.wqs, self.currentCastlingRights.bqs)]
-
-        # self.protects = [][]
-        # self.threatens = [][]
-        # self.squaresCanMoveTo = [][]
         
 
     def makeMove(self, move):
@@ -74,8 +67,8 @@ class GameState():
             if move.endColumn - move.startColumn == 2: # kingside
                 self.board[move.endRow][move.endColumn - 1] = self.board[move.endRow][move.endColumn + 1] # moving R
                 self.board[move.endRow][move.endColumn + 1] = '--' # empty square where R was
-            else: # queenside
-                self.board[move.endRow][move.endColumn + 1] = self.board[move.endRow][move.endColumn + 1] # moving R
+            elif move.endColumn - move.startColumn == -2: # queenside
+                self.board[move.endRow][move.endColumn + 1] = self.board[move.endRow][move.endColumn -2] # moving R
                 self.board[move.endRow][move.endColumn - 2 ] = '--' # empty 
         
         self.enPassantPossibleLog.append(self.enPassantPossible)
@@ -107,16 +100,15 @@ class GameState():
             # give back castle rights if move took them away
             self.castleRightsLog.pop() # remove last moves updates
             castleRights = self.castleRightsLog[-1]
-            self.whiteCastleKingside = castleRights.wks
-            self.blackCastleKingside = castleRights.bks
-            self.whiteCastleQueenside = castleRights.wqs
-            self.blackCastleQueenside = castleRights.bqs
+            self.currentCastlingRights = CastleRights(
+                castleRights.wks, castleRights.bks, castleRights.wqs, castleRights.bqs
+            )
             # undo castle
         if move.castle:
             if move.endColumn - move.startColumn == 2: # kingside
                 self.board[move.endRow][move.endColumn + 1] = self.board[move.endRow][move.endColumn - 1] # moving back R
                 self.board[move.endRow][move.endColumn + 1] = '--' # empty square where R was
-            else: # queenside
+            elif move.endColumn - move.startColumn == -2: # queenside
                 self.board[move.endRow][move.endColumn - 2] = self.board[move.endRow][move.endColumn + 1] # moving back R
                 self.board[move.endRow][move.endColumn + 1 ] = '--' # empty 
 
